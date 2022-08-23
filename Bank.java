@@ -35,8 +35,6 @@ public class Bank {
             case 2:
                 logout();
                 break;
-            default:
-                System.out.println("Choice error !");
         }
     }
 
@@ -72,8 +70,6 @@ public class Bank {
             case 2:
                 logIn();
                 break;
-            default:
-                System.out.println("Choice error !");
         }
     }
 

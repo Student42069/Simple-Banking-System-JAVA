@@ -7,7 +7,7 @@ public class Account {
     private int pin;
     private long balance = 0;
 
-    private Random random = new Random();
+    private final Random random = new Random();
 
     public Account(){
         generateCardNumber();
@@ -37,7 +37,24 @@ public class Account {
     }
 
     private int checkSum(StringBuilder number) {
-        return random.nextInt(10);
+        int sum = 0;
+        for (int i = 1; i <= number.length(); i++) {
+            if (i%2==1) {
+                sum += removeNine(Integer.parseInt(number.charAt(i-1) + "") * 2);
+            } else {
+                sum += Integer.parseInt(number.charAt(i-1) + "");
+            }
+        }
+        return ((int) Math.ceil(sum/10.0)*10) - sum;
+    }
+
+    private int removeNine(int num) {
+        if (num > 9) {
+            return num - 9;
+        }
+        else {
+            return num;
+        }
     }
 
     public long getCardNumber() {
