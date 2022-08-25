@@ -1,39 +1,37 @@
 package banking;
 
-import org.sqlite.SQLiteDataSource;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Random;
 
+import static banking.Bank.dataSource;
+
 public class Account {
     private long cardNumber;
-    private int pin;
 
     private final static Random random = new Random(100);
 
     public Account(){
-        generateCardNumber();
-        generatePin();
-        insertInDB();
-        printCreated();
+        int pin = generatePin();
+        long cardNumber = generateCardNumber();
+        insertInDB(cardNumber, pin);
+        printCreated(cardNumber, pin);
     }
 
-    private void insertInDB() {
-        String url = "jdbc:sqlite:" + Bank.DBFileName;
+    public Account(long number) {
+        this.cardNumber = number;
+    }
 
-        SQLiteDataSource dataSource = new SQLiteDataSource();
-        dataSource.setUrl(url);
-
+    private static void insertInDB(long cardNumber, int pin) {
         try (Connection con = dataSource.getConnection()) {
             // Statement creation
             try (Statement statement = con.createStatement()) {
                 // Statement execution
                 statement.executeUpdate("INSERT INTO card (number, pin) " +
                         "VALUES " +
-                        "("+this.cardNumber+", "+this.pin+")");
+                        "(" + cardNumber + ", " + pin + ")");
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -42,23 +40,19 @@ public class Account {
         }
     }
 
-    public Account(long number) {
-        this.cardNumber = number;
-    }
-
-    private void printCreated() {
+    private void printCreated(long cardNumber, int pin) {
         System.out.println("\nYour card has been created\n" +
                 "Your card number:\n" +
-                this.cardNumber + "\n" +
+                cardNumber + "\n" +
                 "Your card PIN:\n" +
-                this.pin + "\n");
+                pin + "\n");
     }
 
-    private void generatePin() {
-        this.pin = random.nextInt(10000);
+    private static int generatePin() {
+        return random.nextInt(10000 - 1000) + 1000;
     }
 
-    private void generateCardNumber() {
+    private static long generateCardNumber() {
         StringBuilder number;
         do {
             number = new StringBuilder("400000");
@@ -68,13 +62,10 @@ public class Account {
             number.append(checkSum(number));
         } while(checkIfNumberUsed(Long.parseLong(number.toString())));
 
-        this.cardNumber = Long.parseLong(number.toString());
+        return Long.parseLong(number.toString());
     }
 
-    private boolean checkIfNumberUsed(Long number) {
-        String url = "jdbc:sqlite:" + Bank.DBFileName;
-        SQLiteDataSource dataSource = new SQLiteDataSource();
-        dataSource.setUrl(url);
+    private static boolean checkIfNumberUsed(Long number) {
         try (Connection con = dataSource.getConnection()) {
             // Statement creation
             try (Statement statement = con.createStatement()) {
@@ -89,7 +80,7 @@ public class Account {
         return false;
     }
 
-    private int checkSum(StringBuilder number) {
+    private static int checkSum(StringBuilder number) {
         int sum = 0;
         for (int i = 1; i <= number.length(); i++) {
             if (i%2==1) {
@@ -101,7 +92,7 @@ public class Account {
         return ((int) Math.ceil(sum/10.0)*10) - sum;
     }
 
-    private int removeNine(int num) {
+    private static int removeNine(int num) {
         if (num > 9) {
             return num - 9;
         }
@@ -111,10 +102,6 @@ public class Account {
     }
 
     public long getBalance() {
-        String url = "jdbc:sqlite:" + Bank.DBFileName;
-        SQLiteDataSource dataSource = new SQLiteDataSource();
-        dataSource.setUrl(url);
-
         try (Connection con = dataSource.getConnection()) {
             // Statement creation
             try (Statement statement = con.createStatement()) {

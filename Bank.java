@@ -11,20 +11,19 @@ import java.util.Scanner;
 import static java.lang.System.exit;
 
 public class Bank {
-    static String DBFileName;
     Account currentLoggedIn;
-    SQLiteDataSource dataSource = new SQLiteDataSource();
+
+    static SQLiteDataSource dataSource = new SQLiteDataSource();
 
     Scanner sc = new Scanner(System.in);
 
     public Bank(String arg) {
-        Bank.DBFileName = arg;
-        connectSQLite();
+        connectSQLite(arg);
     }
 
-    private void connectSQLite() {
-        String url = "jdbc:sqlite:" + Bank.DBFileName;
-        this.dataSource.setUrl(url);
+    private void connectSQLite(String arg) {
+        String url = "jdbc:sqlite:" + arg;
+        Bank.dataSource.setUrl(url);
 
         try (Connection con = dataSource.getConnection()) {
             // Statement creation
@@ -118,7 +117,7 @@ public class Bank {
     }
 
     private boolean checkIfExists(long number, int pin) {
-        try (Connection con = this.dataSource.getConnection()) {
+        try (Connection con = Bank.dataSource.getConnection()) {
             // Statement creation
             try (Statement statement = con.createStatement()) {
                 try (ResultSet greatHouses = statement.executeQuery("SELECT * FROM card WHERE number = "
