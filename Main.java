@@ -2,7 +2,9 @@ package banking;
 
 public class Main {
     public static void main(String[] args) {
-        Bank bank = new Bank();
-        bank.start();
+        if (args[0].equals("-fileName")) {
+            Bank bank = new Bank(args[1]);
+            bank.start();
+        }
     }
 }

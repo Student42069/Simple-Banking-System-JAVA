@@ -1,18 +1,49 @@
 package banking;
 
+import org.sqlite.SQLiteDataSource;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Random;
 
 public class Account {
     private long cardNumber;
     private int pin;
-    private long balance = 0;
 
-    private final Random random = new Random();
+    private final static Random random = new Random(100);
 
     public Account(){
         generateCardNumber();
         generatePin();
+        insertInDB();
         printCreated();
+    }
+
+    private void insertInDB() {
+        String url = "jdbc:sqlite:" + Bank.DBFileName;
+
+        SQLiteDataSource dataSource = new SQLiteDataSource();
+        dataSource.setUrl(url);
+
+        try (Connection con = dataSource.getConnection()) {
+            // Statement creation
+            try (Statement statement = con.createStatement()) {
+                // Statement execution
+                statement.executeUpdate("INSERT INTO card (number, pin) " +
+                        "VALUES " +
+                        "("+this.cardNumber+", "+this.pin+")");
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public Account(long number) {
+        this.cardNumber = number;
     }
 
     private void printCreated() {
@@ -28,12 +59,34 @@ public class Account {
     }
 
     private void generateCardNumber() {
-        StringBuilder number = new StringBuilder("400000");
-        for (int i = 0; i < 9; i++){
-            number.append(String.valueOf(random.nextInt(10)));
-        }
-        number.append(String.valueOf(checkSum(number)));
+        StringBuilder number;
+        do {
+            number = new StringBuilder("400000");
+            for (int i = 0; i < 9; i++) {
+                number.append(random.nextInt(10));
+            }
+            number.append(checkSum(number));
+        } while(checkIfNumberUsed(Long.parseLong(number.toString())));
+
         this.cardNumber = Long.parseLong(number.toString());
+    }
+
+    private boolean checkIfNumberUsed(Long number) {
+        String url = "jdbc:sqlite:" + Bank.DBFileName;
+        SQLiteDataSource dataSource = new SQLiteDataSource();
+        dataSource.setUrl(url);
+        try (Connection con = dataSource.getConnection()) {
+            // Statement creation
+            try (Statement statement = con.createStatement()) {
+                try (ResultSet greatHouses = statement.executeQuery("SELECT * FROM card WHERE number = "
+                        + number + ";")) {
+                    return greatHouses.next();
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     private int checkSum(StringBuilder number) {
@@ -57,15 +110,27 @@ public class Account {
         }
     }
 
-    public long getCardNumber() {
-        return this.cardNumber;
-    }
-
-    public int getPin() {
-        return this.pin;
-    }
-
     public long getBalance() {
-        return this.balance;
+        String url = "jdbc:sqlite:" + Bank.DBFileName;
+        SQLiteDataSource dataSource = new SQLiteDataSource();
+        dataSource.setUrl(url);
+
+        try (Connection con = dataSource.getConnection()) {
+            // Statement creation
+            try (Statement statement = con.createStatement()) {
+                // Statement execution
+                try (ResultSet balance = statement.executeQuery("SELECT balance " +
+                        "FROM card WHERE number = " + this.cardNumber)) {
+                    balance.next();
+                    // Retrieve column values
+                    return balance.getLong("balance");
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 69;
     }
 }

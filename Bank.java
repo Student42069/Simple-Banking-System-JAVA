@@ -1,16 +1,47 @@
 package banking;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.sqlite.SQLiteDataSource;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Scanner;
 
 import static java.lang.System.exit;
 
 public class Bank {
-    List<Account> accounts = new ArrayList<>();
+    static String DBFileName;
     Account currentLoggedIn;
+    SQLiteDataSource dataSource = new SQLiteDataSource();
 
     Scanner sc = new Scanner(System.in);
+
+    public Bank(String arg) {
+        Bank.DBFileName = arg;
+        connectSQLite();
+    }
+
+    private void connectSQLite() {
+        String url = "jdbc:sqlite:" + Bank.DBFileName;
+        this.dataSource.setUrl(url);
+
+        try (Connection con = dataSource.getConnection()) {
+            // Statement creation
+            try (Statement statement = con.createStatement()) {
+                // Statement execution
+                statement.executeUpdate("CREATE TABLE IF NOT EXISTS card(" +
+                        "id INTEGER PRIMARY KEY," +
+                        "number TEXT," +
+                        "pin TEXT," +
+                        "balance INTEGER DEFAULT 0)");
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
     public void start() {
         while(true){
@@ -78,19 +109,32 @@ public class Bank {
         long number = sc.nextLong();
         System.out.println("Enter your PIN:");
         int pin = sc.nextInt();
-        for(Account account : accounts){
-            if (account.getCardNumber() == number && account.getPin() == pin) {
-                System.out.println("You have successfully logged in!");
-                this.currentLoggedIn = account;
-                break;
-            } else {
-                System.out.println("Wrong card number or PIN!");
-            }
+        if (checkIfExists(number, pin)) {
+            System.out.println("You have successfully logged in!");
+            this.currentLoggedIn = new Account(number);
+        } else {
+            System.out.println("Wrong card number or PIN!");
         }
     }
 
+    private boolean checkIfExists(long number, int pin) {
+        try (Connection con = this.dataSource.getConnection()) {
+            // Statement creation
+            try (Statement statement = con.createStatement()) {
+                try (ResultSet greatHouses = statement.executeQuery("SELECT * FROM card WHERE number = "
+                        + number + " AND pin = "
+                        + pin + ";")) {
+                    return greatHouses.next();
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     private void createAccount() {
-        this.accounts.add(new Account());
+        new Account();
     }
 
     private int mainMenuChoice() {
