@@ -2,10 +2,7 @@ package banking;
 
 import org.sqlite.SQLiteDataSource;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 /**
  * Class for all SQL calls
@@ -38,10 +35,11 @@ public class SQLConnection {
         try (Connection con = dataSource.getConnection()) {
             // Statement creation
             try (Statement statement = con.createStatement()) {
-                try (ResultSet greatHouses = statement.executeQuery("SELECT * FROM card WHERE number = "
+                try (ResultSet account = statement.executeQuery("SELECT * FROM card " +
+                        "WHERE number = "
                         + number + " AND pin = "
                         + pin + ";")) {
-                    return greatHouses.next();
+                    return account.next();
                 }
             }
         } catch (SQLException e) {
@@ -98,5 +96,66 @@ public class SQLConnection {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public static void deleteAccount(long cardNumber) {
+        try (Connection con = dataSource.getConnection()) {
+            String delete = "DELETE FROM card WHERE number = ?";
+
+            try (PreparedStatement preparedStatement = con.prepareStatement(delete)) {
+                preparedStatement.setLong(1, cardNumber);
+
+                preparedStatement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void addIncome(long cardNumber, int amount) {
+        try (Connection con = dataSource.getConnection()) {
+            String delete = "UPDATE card SET balance = balance + ? WHERE number = ?";
+
+            try (PreparedStatement preparedStatement = con.prepareStatement(delete)) {
+                preparedStatement.setLong(1, amount);
+                preparedStatement.setLong(2, cardNumber);
+
+                preparedStatement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void transferMoney(long from, long to, int amount) {
+        String updateFromSQL = "UPDATE card SET balance = balance - ? WHERE number = ?";
+        String updateToSQL = "UPDATE card SET balance = balance + ? WHERE number = ?";
+
+        try (Connection con = dataSource.getConnection()) {
+            // Disable auto-commit mode
+            con.setAutoCommit(false);
+
+            try (PreparedStatement updateFrom = con.prepareStatement(updateFromSQL);
+                 PreparedStatement updateTo = con.prepareStatement(updateToSQL)) {
+
+                updateFrom.setInt(1, amount);
+                updateFrom.setLong(2, from);
+                updateFrom.executeUpdate();
+
+                updateTo.setInt(1, amount);
+                updateTo.setLong(2, to);
+                updateTo.executeUpdate();
+
+                con.commit();
+            } catch (SQLException e) {
+                try {
+                    con.rollback();
+                } catch (SQLException excep) {
+                    excep.printStackTrace();
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }

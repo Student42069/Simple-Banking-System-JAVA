@@ -8,7 +8,7 @@ import java.util.Random;
 public class Account {
     private final static String MAJOR_INDUSTRY_IDENTIFIER = "400000";
 
-    private final static Random random = new Random(100);
+    private final static Random random = new Random();
 
     public Account(){
         int pin = generatePin();
@@ -50,7 +50,7 @@ public class Account {
         return SQLConnection.checkIfNumberUsed(number);
     }
 
-    private static int checkSum(StringBuilder number) {
+    static int checkSum(StringBuilder number) {
         int sum = 0;
         for (int i = 1; i <= number.length(); i++) {
             if (i%2==1) {

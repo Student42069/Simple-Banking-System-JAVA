@@ -1,11 +1,5 @@
 package banking;
 
-import org.sqlite.SQLiteDataSource;
-
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Scanner;
 
 import static java.lang.System.exit;
@@ -40,28 +34,69 @@ public class Bank {
                 showBalance();
                 break;
             case 2:
+                addIncome();
+                break;
+            case 3:
+                transfer();
+                break;
+            case 4:
+                closeAccount();
+                break;
+            case 5:
                 logout();
                 break;
         }
     }
 
+    private void closeAccount() {
+        this.currentLoggedIn.closeAccount();
+        System.out.println("\nThe account has been closed!\n");
+        this.currentLoggedIn = null;
+    }
+
+    private void transfer() {
+        try {
+            System.out.println("\nTransfer\nEnter card number:");
+            long to = sc.nextLong();
+            this.currentLoggedIn.checkTransferTo(to);
+
+            System.out.println("Enter how much money you want to transfer:");
+            int amount = sc.nextInt();
+            this.currentLoggedIn.checkTransferAmount(amount);
+
+            this.currentLoggedIn.transfer(to, amount);
+        } catch (TransferException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private void addIncome() {
+        System.out.println("\nEnter income:");
+        this.currentLoggedIn.addIncome(sc.nextInt());
+        System.out.println("Income was added!\n");
+    }
+
     private void logout() {
-        System.out.println("You have successfully logged out!");
+        System.out.println("\nYou have successfully logged out!");
         this.currentLoggedIn = null;
     }
 
     private void showBalance() {
-        System.out.println("Balance: " + this.currentLoggedIn.getBalance());
+        System.out.println("\nBalance: " + this.currentLoggedIn.getBalance() + "\n");
     }
 
     private int accountMenuChoice() {
         int choice;
         do {
             System.out.println("1. Balance\n" +
-                    "2. Log out\n" +
+                    "2. Add income\n" +
+                    "3. Do transfer\n" +
+                    "4. Close account\n" +
+                    "5. Log out\n" +
                     "0. Exit");
             choice = sc.nextInt();
-        } while(choice != 0 && choice != 1 && choice != 2);
+        } while(choice != 0 && choice != 1 && choice != 2
+                && choice != 3 && choice != 4 && choice != 5);
         return choice;
     }
 
@@ -81,15 +116,15 @@ public class Bank {
     }
 
     private void logIn() {
-        System.out.println("Enter your card number:");
+        System.out.println("\nEnter your card number:");
         long number = sc.nextLong();
         System.out.println("Enter your PIN:");
         int pin = sc.nextInt();
         if (checkIfExists(number, pin)) {
-            System.out.println("You have successfully logged in!");
+            System.out.println("\nYou have successfully logged in!\n");
             this.currentLoggedIn = new AccountConnection(number);
         } else {
-            System.out.println("Wrong card number or PIN!");
+            System.out.println("Wrong card number or PIN!\n");
         }
     }
 
