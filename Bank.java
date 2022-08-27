@@ -11,35 +11,12 @@ import java.util.Scanner;
 import static java.lang.System.exit;
 
 public class Bank {
-    Account currentLoggedIn;
-
-    static SQLiteDataSource dataSource = new SQLiteDataSource();
+    AccountConnection currentLoggedIn;
 
     Scanner sc = new Scanner(System.in);
 
     public Bank(String arg) {
-        connectSQLite(arg);
-    }
-
-    private void connectSQLite(String arg) {
-        String url = "jdbc:sqlite:" + arg;
-        Bank.dataSource.setUrl(url);
-
-        try (Connection con = dataSource.getConnection()) {
-            // Statement creation
-            try (Statement statement = con.createStatement()) {
-                // Statement execution
-                statement.executeUpdate("CREATE TABLE IF NOT EXISTS card(" +
-                        "id INTEGER PRIMARY KEY," +
-                        "number TEXT," +
-                        "pin TEXT," +
-                        "balance INTEGER DEFAULT 0)");
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        SQLConnection.connectSQLite(arg);
     }
 
     public void start() {
@@ -110,26 +87,14 @@ public class Bank {
         int pin = sc.nextInt();
         if (checkIfExists(number, pin)) {
             System.out.println("You have successfully logged in!");
-            this.currentLoggedIn = new Account(number);
+            this.currentLoggedIn = new AccountConnection(number);
         } else {
             System.out.println("Wrong card number or PIN!");
         }
     }
 
     private boolean checkIfExists(long number, int pin) {
-        try (Connection con = Bank.dataSource.getConnection()) {
-            // Statement creation
-            try (Statement statement = con.createStatement()) {
-                try (ResultSet greatHouses = statement.executeQuery("SELECT * FROM card WHERE number = "
-                        + number + " AND pin = "
-                        + pin + ";")) {
-                    return greatHouses.next();
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
+        return SQLConnection.checkIfExists(number, pin);
     }
 
     private void createAccount() {

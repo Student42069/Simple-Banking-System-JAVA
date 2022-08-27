@@ -1,15 +1,12 @@
 package banking;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Random;
 
-import static banking.Bank.dataSource;
-
+/**
+ * Class used to create a new bank Account
+ */
 public class Account {
-    private long cardNumber;
+    private final static String MAJOR_INDUSTRY_IDENTIFIER = "400000";
 
     private final static Random random = new Random(100);
 
@@ -20,24 +17,8 @@ public class Account {
         printCreated(cardNumber, pin);
     }
 
-    public Account(long number) {
-        this.cardNumber = number;
-    }
-
     private static void insertInDB(long cardNumber, int pin) {
-        try (Connection con = dataSource.getConnection()) {
-            // Statement creation
-            try (Statement statement = con.createStatement()) {
-                // Statement execution
-                statement.executeUpdate("INSERT INTO card (number, pin) " +
-                        "VALUES " +
-                        "(" + cardNumber + ", " + pin + ")");
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        SQLConnection.insertInDB(cardNumber, pin);
     }
 
     private void printCreated(long cardNumber, int pin) {
@@ -55,7 +36,7 @@ public class Account {
     private static long generateCardNumber() {
         StringBuilder number;
         do {
-            number = new StringBuilder("400000");
+            number = new StringBuilder(MAJOR_INDUSTRY_IDENTIFIER);
             for (int i = 0; i < 9; i++) {
                 number.append(random.nextInt(10));
             }
@@ -66,18 +47,7 @@ public class Account {
     }
 
     private static boolean checkIfNumberUsed(Long number) {
-        try (Connection con = dataSource.getConnection()) {
-            // Statement creation
-            try (Statement statement = con.createStatement()) {
-                try (ResultSet greatHouses = statement.executeQuery("SELECT * FROM card WHERE number = "
-                        + number + ";")) {
-                    return greatHouses.next();
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
+        return SQLConnection.checkIfNumberUsed(number);
     }
 
     private static int checkSum(StringBuilder number) {
@@ -99,25 +69,5 @@ public class Account {
         else {
             return num;
         }
-    }
-
-    public long getBalance() {
-        try (Connection con = dataSource.getConnection()) {
-            // Statement creation
-            try (Statement statement = con.createStatement()) {
-                // Statement execution
-                try (ResultSet balance = statement.executeQuery("SELECT balance " +
-                        "FROM card WHERE number = " + this.cardNumber)) {
-                    balance.next();
-                    // Retrieve column values
-                    return balance.getLong("balance");
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 69;
     }
 }
